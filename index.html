@@ -5,487 +5,466 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dr. Sims Workout Builder</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            margin: 0;
-            padding: 0;
+        .exercise-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        .icon {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            vertical-align: middle;
+        .exercise-card:hover {
+            border-color: #3b82f6;
+        }
+        .exercise-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .exercise-card.completed {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        .phase-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 16px 0;
+        }
+        .phase-header {
+            padding: 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .phase-content {
+            padding: 16px;
+            display: none;
+        }
+        .phase-content.expanded {
+            display: block;
+        }
+        .definition {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+        .definition.show {
+            display: block;
         }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                📅 Workout Builder - Dr. Sims Method
+            </h1>
+            <p class="text-gray-600">Choose your framework, then customize your exercises</p>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Your Equipment:</strong> 5 lbs, 10 lbs, 15 lbs, 25 lbs dumbbells + resistance bands + chair
+                </p>
+            </div>
+        </div>
 
 ```
-<script type="text/babel">
-    const { useState } = React;
+    <!-- Day Selection -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Select Day</label>
+        <select id="daySelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="monday">Monday</option>
+            <option value="tuesday">Tuesday</option>
+            <option value="wednesday">Wednesday</option>
+            <option value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+        </select>
+    </div>
 
-    // Simple icon components
-    const Calendar = () => <span className="icon">📅</span>;
-    const Clock = () => <span className="icon">⏰</span>;
-    const Zap = ({ className }) => <span className={`icon ${className}`}>⚡</span>;
-    const Dumbbell = ({ className }) => <span className={`icon ${className}`}>🏋️</span>;
-    const Activity = ({ className }) => <span className={`icon ${className}`}>🏃</span>;
-    const ChevronDown = () => <span className="icon">▼</span>;
-    const ChevronUp = () => <span className="icon">▲</span>;
-    const Play = ({ className }) => <span className={`icon ${className}`}>▶️</span>;
-    const Check = () => <span className="icon">✅</span>;
+    <!-- Current Workout Overview -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="workoutTitle" class="text-xl font-semibold text-gray-800">
+                ⏰ Monday: Lower Body + SIT
+            </h2>
+            <span id="workoutDuration" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                40 minutes
+            </span>
+        </div>
+        
+        <div id="workoutPhases" class="flex flex-wrap gap-2">
+            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">Jump Training (5 min)</span>
+            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">Strength Training (25 min)</span>
+            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">SIT Finisher (8 min)</span>
+        </div>
+    </div>
 
-    const WorkoutBuilder = () => {
-        const [selectedWeek, setSelectedWeek] = useState(1);
-        const [selectedDay, setSelectedDay] = useState('monday');
-        const [workoutSelections, setWorkoutSelections] = useState({});
-        const [expandedSections, setExpandedSections] = useState({});
-        const [completedExercises, setCompletedExercises] = useState({});
-
-        // Weekly frameworks
-        const weeklyFrameworks = {
-            1: {
-                monday: { type: 'Lower Body + SIT', duration: 40, phases: ['jump', 'strength', 'sit'] },
-                tuesday: { type: 'Power + Jumps', duration: 35, phases: ['jump', 'power'] },
-                wednesday: { type: 'Upper Body + SIT', duration: 40, phases: ['activation', 'strength', 'sit'] },
-                thursday: { type: 'Active Recovery', duration: 25, phases: ['mobility', 'activation'] },
-                friday: { type: 'Total Body + SIT', duration: 40, phases: ['jump', 'power', 'sit'] }
-            },
-            2: {
-                monday: { type: 'Total Body + SIT', duration: 40, phases: ['jump', 'power', 'sit'] },
-                tuesday: { type: 'Power + Jumps', duration: 35, phases: ['jump', 'power'] },
-                wednesday: { type: 'Lower Body + SIT', duration: 40, phases: ['jump', 'strength', 'sit'] },
-                thursday: { type: 'Active Recovery', duration: 25, phases: ['mobility', 'activation'] },
-                friday: { type: 'Upper Body + SIT', duration: 40, phases: ['activation', 'strength', 'sit'] }
-            },
-            3: {
-                monday: { type: 'Lower Body + SIT', duration: 40, phases: ['jump', 'strength', 'sit'] },
-                tuesday: { type: 'Jump + Strength', duration: 40, phases: ['jump', 'integration'] },
-                wednesday: { type: 'Upper Body + SIT', duration: 40, phases: ['activation', 'strength', 'sit'] },
-                thursday: { type: 'Active Recovery', duration: 25, phases: ['mobility', 'activation'] },
-                friday: { type: 'Total Body + SIT', duration: 40, phases: ['jump', 'power', 'sit'] }
-            }
-        };
-
-        // Exercise options with your exact weights (5, 10, 15, 25 lbs)
-        const exerciseOptions = {
-            jump: [
-                { name: 'Squat Jump with Stick Landing', reps: '5 reps', weight: 'bodyweight', time: '2 sets' },
-                { name: 'Broad Jump to Stabilization', reps: '3 reps', weight: 'bodyweight', time: '2 sets' },
-                { name: 'Step-Up with Knee Drive', reps: '4 per leg', weight: 'bodyweight', time: '2 sets' },
-                { name: 'Depth Jump to Vertical', reps: '4 reps', weight: 'bodyweight', time: '3 sets' },
-                { name: 'Lateral Bounds', reps: '4 per side', weight: 'bodyweight', time: '3 sets' },
-                { name: 'Split Jump to Tuck Jump', reps: '3 combos', weight: 'bodyweight', time: '2 sets' },
-                { name: 'Multi-Directional Bounds', reps: '3 each direction', weight: 'bodyweight', time: '2 sets' }
-            ],
-            strength: [
-                { name: 'Dumbbell Goblet Squat', reps: '6-8 reps', weight: '25 lbs', time: '4 sets' },
-                { name: 'Single-Leg Romanian Deadlift', reps: '6 per leg', weight: '15 lbs each hand', time: '4 sets' },
-                { name: 'Bulgarian Split Squats', reps: '8 per leg', weight: '10-15 lbs each hand', time: '3 sets' },
-                { name: 'Single-Arm Dumbbell Row', reps: '8 per arm', weight: '15-25 lbs', time: '4 sets' },
-                { name: 'Dumbbell Floor Press', reps: '8 reps', weight: '15 lbs each hand', time: '4 sets' },
-                { name: 'Dumbbell Push Press', reps: '6 reps', weight: '10-15 lbs each hand', time: '3 sets' },
-                { name: 'Renegade Rows', reps: '6 per arm', weight: '10 lbs each hand', time: '3 sets' },
-                { name: 'Glute Bridges', reps: '12 reps', weight: '15-25 lbs on hips', time: '3 sets' }
-            ],
-            power: [
-                { name: 'Dumbbell Snatch', reps: '5 per arm', weight: '10-15 lbs', time: '3 rounds' },
-                { name: 'Jump Squat with Dumbbells', reps: '8 reps', weight: '5-10 lbs each hand', time: '3 rounds' },
-                { name: 'Reverse Lunge to Single-Arm Press', reps: '6 per side', weight: '10-15 lbs', time: '3 rounds' },
-                { name: 'Dumbbell Thruster', reps: '8 reps', weight: '10-15 lbs each hand', time: '3 rounds' },
-                { name: 'Heavy Dumbbell Swings', reps: '20 reps', weight: '25 lbs (both hands)', time: '3 rounds' },
-                { name: 'Single-Leg RDL to Knee Drive', reps: '6 per leg', weight: '10 lbs', time: '3 rounds' }
-            ],
-            sit: [
-                { name: 'Dumbbell Thrusters', reps: '30 sec work', weight: '10-15 lbs each hand', time: '3 rounds, 90s rest', duration: 3 },
-                { name: 'Burpee Complex', reps: '30 sec work', weight: 'bodyweight', time: '3 rounds, 90s rest', duration: 3 },
-                { name: 'Heavy Dumbbell Swings', reps: '30 sec work', weight: '25 lbs', time: '3 rounds, 90s rest', duration: 3 },
-                { name: 'Fast Jump Squats', reps: '30 sec work', weight: 'bodyweight', time: '3 rounds, 90s rest', duration: 3 },
-                { name: 'Mountain Climber Intervals', reps: '20 sec work', weight: 'bodyweight', time: '4 rounds, 70s rest', duration: 2.5 },
-                { name: 'Dumbbell High Pulls', reps: '20 sec work', weight: '15 lbs each hand', time: '4 rounds, 70s rest', duration: 2.5 },
-                { name: 'Explosive Push-Ups', reps: '20 sec work', weight: 'bodyweight', time: '4 rounds, 70s rest', duration: 2.5 },
-                { name: 'Alternating Jump Lunges', reps: '30 sec work', weight: 'bodyweight', time: '3 rounds, 90s rest', duration: 3 },
-                { name: 'Dumbbell Renegade Rows', reps: '20 sec work', weight: '10 lbs each hand', time: '4 rounds, 70s rest', duration: 2.5 },
-                { name: 'Fast Dumbbell Thrusters', reps: '25 sec work', weight: '10 lbs each hand', time: '4 rounds, 75s rest', duration: 2.5 }
-            ],
-            activation: [
-                { name: 'Arm Swings with Rotation', reps: '8 each direction', weight: 'bodyweight', time: '2 rounds' },
-                { name: 'Light Squat Jumps', reps: '4 reps', weight: 'bodyweight', time: '2 rounds' },
-                { name: 'Shoulder Blade Squeezes', reps: '8 reps', weight: 'bodyweight', time: '2 rounds' },
-                { name: 'Push-Up to Downward Dog', reps: '5 reps', weight: 'bodyweight', time: '2 rounds' },
-                { name: 'Light Dumbbell Reverse Flyes', reps: '15 reps', weight: '5 lbs each hand', time: '2 rounds' }
-            ],
-            mobility: [
-                { name: 'Cat-Cow Stretches', reps: '8 reps', weight: 'bodyweight', time: '3 rounds' },
-                { name: 'Hip Flexor Stretch', reps: '30 sec each leg', weight: 'bodyweight', time: '3 rounds' },
-                { name: 'Thoracic Spine Rotation', reps: '8 each direction', weight: 'bodyweight', time: '3 rounds' },
-                { name: 'Glute Bridge Hold', reps: '30 seconds', weight: 'bodyweight', time: '3 rounds' },
-                { name: 'Wall Sits', reps: '30 seconds', weight: 'bodyweight', time: '3 rounds' },
-                { name: 'Single-Leg Deadlift Hold', reps: '20 sec each leg', weight: 'bodyweight', time: '3 rounds' }
-            ],
-            integration: [
-                { name: 'Goblet Squat to Jump Squat', reps: '6+3 combo', weight: '25 lbs + bodyweight', time: '4 sets' },
-                { name: 'Row to Fast Thrusters', reps: '8+8 combo', weight: '15 lbs + 10 lbs', time: '3 sets' },
-                { name: 'RDL to Broad Jump', reps: '8+3 combo', weight: '15 lbs + bodyweight', time: '2 sets' },
-                { name: 'Floor Press to Jump Squat', reps: '8+5 combo', weight: '15 lbs + bodyweight', time: '3 sets' }
-            ]
-        };
-
-        // Helper functions
-        const getCurrentWorkout = () => {
-            return weeklyFrameworks[selectedWeek]?.[selectedDay] || {};
-        };
-
-        const getSelectedSITTime = () => {
-            const selectedExercises = Object.entries(workoutSelections)
-                .filter(([key, exercise]) => 
-                    key.startsWith(`${selectedWeek}-${selectedDay}-sit`) && exercise
-                )
-                .map(([, exercise]) => exercise);
-            
-            return selectedExercises.reduce((total, exercise) => total + (exercise.duration || 0), 0);
-        };
-
-        const getSelectedCount = (phase) => {
-            return Object.keys(workoutSelections).filter(key => 
-                key.startsWith(`${selectedWeek}-${selectedDay}-${phase}`) && workoutSelections[key]
-            ).length;
-        };
-
-        const getPhaseTitle = (phase) => {
-            const titles = {
-                jump: 'Jump Training (5 min)',
-                strength: 'Strength Training (25 min)',
-                power: 'Power Circuits (18 min)',
-                sit: 'SIT Finisher (8 min)',
-                activation: 'Neural Activation (4 min)',
-                mobility: 'Mobility Work (15 min)',
-                integration: 'Strength Integration (24 min)'
-            };
-            return titles[phase] || phase;
-        };
-
-        const getPhaseIcon = (phase) => {
-            const icons = {
-                jump: <Zap className="text-yellow-500" />,
-                strength: <Dumbbell className="text-blue-500" />,
-                power: <Activity className="text-red-500" />,
-                sit: <Zap className="text-purple-500" />,
-                activation: <Play className="text-green-500" />,
-                mobility: <Activity className="text-teal-500" />,
-                integration: <Dumbbell className="text-orange-500" />
-            };
-            return icons[phase] || <Activity />;
-        };
-
-        const getPhaseInstructions = (phase, workoutType) => {
-            const instructions = {
-                jump: workoutType === 'Power + Jumps' 
-                    ? 'Select 4-6 exercises (Extended Jump Training - 15 min)'
-                    : 'Select 2-3 exercises (Quick Neural Primer - 5 min)',
-                strength: 'Select 3-4 exercises (Focus on compound movements)',
-                power: 'Select 3-4 exercises (Explosive, full-body movements)',
-                sit: 'Select multiple exercises totaling ~8 minutes (High-intensity intervals)',
-                activation: 'Select 2-3 exercises (Light neural activation)',
-                mobility: 'Select 3-5 exercises (Movement quality focus)',
-                integration: 'Select 2-3 exercise combinations (Strength + power pairs)'
-            };
-            return instructions[phase] || '';
-        };
-
-        const getMaxSelections = (phase, workoutType) => {
-            if (phase === 'jump') {
-                return workoutType === 'Power + Jumps' ? 6 : 3;
-            }
-            if (phase === 'sit') return 10;
-            if (phase === 'activation') return 3;
-            return 4;
-        };
-
-        // Event handlers
-        const handleExerciseSelect = (phase, exercise) => {
-            const exerciseKey = `${selectedWeek}-${selectedDay}-${phase}-${exercise.name}`;
-            const isCurrentlySelected = workoutSelections[exerciseKey];
-            
-            if (phase === 'sit') {
-                const currentTime = getSelectedSITTime();
-                if (!isCurrentlySelected && currentTime + (exercise.duration || 0) > 10) {
-                    return;
-                }
-            } else {
-                const maxSelections = getMaxSelections(phase, getCurrentWorkout().type);
-                const currentCount = getSelectedCount(phase);
-                if (!isCurrentlySelected && currentCount >= maxSelections) {
-                    return;
-                }
-            }
-            
-            setWorkoutSelections(prev => ({
-                ...prev,
-                [exerciseKey]: isCurrentlySelected ? null : exercise
-            }));
-        };
-
-        const handleExerciseComplete = (exerciseKey) => {
-            setCompletedExercises(prev => ({
-                ...prev,
-                [exerciseKey]: !prev[exerciseKey]
-            }));
-        };
-
-        const toggleSection = (section) => {
-            setExpandedSections(prev => ({
-                ...prev,
-                [section]: !prev[section]
-            }));
-        };
-
-        const currentWorkout = getCurrentWorkout();
-        const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-
-        return (
-            <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-                {/* Header */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <Calendar />
-                        Workout Builder - Dr. Sims Method
-                    </h1>
-                    <p className="text-gray-600">Choose your framework, then customize your exercises</p>
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                            <strong>Your Equipment:</strong> 5 lbs, 10 lbs, 15 lbs, 25 lbs dumbbells + resistance bands + chair
-                        </p>
+    <!-- Exercise Phases -->
+    <div id="exercisePhases">
+        <!-- Jump Training Phase -->
+        <div class="phase-section">
+            <div class="phase-header" onclick="togglePhase('jump')">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">⚡ Jump Training (5 min)</h3>
+                    <div class="flex items-center gap-2">
+                        <span id="jumpCount" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">0 selected</span>
+                        <span id="jumpChevron">▼</span>
                     </div>
-                </div>
-
-                {/* Week and Day Selection */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Week Pattern</label>
-                            <select 
-                                value={selectedWeek} 
-                                onChange={(e) => setSelectedWeek(Number(e.target.value))}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value={1}>Week 1 - Foundation Pattern</option>
-                                <option value={2}>Week 2 - Power Emphasis</option>
-                                <option value={3}>Week 3 - Lower Body Focus</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Day</label>
-                            <select 
-                                value={selectedDay} 
-                                onChange={(e) => setSelectedDay(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                {dayNames.map(day => (
-                                    <option key={day} value={day}>
-                                        {day.charAt(0).toUpperCase() + day.slice(1)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Current Workout Overview */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                            <Clock />
-                            {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}: {currentWorkout.type}
-                        </h2>
-                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {currentWorkout.duration} minutes
-                        </span>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                        {currentWorkout.phases?.map((phase, index) => (
-                            <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                                {getPhaseIcon(phase)}
-                                {getPhaseTitle(phase)}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Exercise Selection */}
-                <div className="space-y-4">
-                    {currentWorkout.phases?.map((phase) => {
-                        const isExpanded = expandedSections[phase];
-                        const selectedTime = phase === 'sit' ? getSelectedSITTime() : 0;
-                        const selectedCount = getSelectedCount(phase);
-                        const maxSelections = getMaxSelections(phase, currentWorkout.type);
-                        
-                        return (
-                            <div key={phase} className="bg-white rounded-lg shadow-lg">
-                                <div 
-                                    className="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50"
-                                    onClick={() => toggleSection(phase)}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {getPhaseIcon(phase)}
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-gray-800">
-                                                {getPhaseTitle(phase)}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">
-                                                {getPhaseInstructions(phase, currentWorkout.type)}
-                                            </p>
-                                        </div>
-                                        {phase === 'sit' ? (
-                                            <span className={`px-2 py-1 rounded text-sm ml-auto mr-2 ${
-                                                selectedTime >= 7 && selectedTime <= 9 
-                                                    ? 'bg-green-100 text-green-800' 
-                                                    : selectedTime > 9
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                                {selectedTime} min / 8 min target
-                                            </span>
-                                        ) : (
-                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm ml-auto mr-2">
-                                                {selectedCount}/{maxSelections} selected
-                                            </span>
-                                        )}
-                                    </div>
-                                    {isExpanded ? <ChevronUp /> : <ChevronDown />}
-                                </div>
-                                
-                                {isExpanded && (
-                                    <div className="border-t p-4">
-                                        <div className="grid gap-3">
-                                            {exerciseOptions[phase]?.map((exercise, i) => {
-                                                const exerciseKey = `${selectedWeek}-${selectedDay}-${phase}-${exercise.name}`;
-                                                const isSelected = workoutSelections[exerciseKey];
-                                                const isCompleted = completedExercises[exerciseKey];
-                                                
-                                                let canSelect = true;
-                                                if (phase === 'sit') {
-                                                    canSelect = isSelected || (selectedTime + (exercise.duration || 0) <= 10);
-                                                } else {
-                                                    canSelect = isSelected || selectedCount < maxSelections;
-                                                }
-                                                
-                                                return (
-                                                    <div 
-                                                        key={i}
-                                                        className={`p-3 border rounded-lg transition-all ${
-                                                            isSelected 
-                                                                ? 'border-blue-500 bg-blue-50' 
-                                                                : canSelect 
-                                                                    ? 'border-gray-200 hover:border-gray-300 cursor-pointer'
-                                                                    : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50'
-                                                        } ${isCompleted ? 'bg-green-50 border-green-300' : ''}`}
-                                                        onClick={() => canSelect && handleExerciseSelect(phase, exercise)}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <h4 className={`font-medium ${isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                                                                    {exercise.name}
-                                                                </h4>
-                                                                <div className="text-sm text-gray-600 flex gap-4">
-                                                                    <span>📊 {exercise.reps}</span>
-                                                                    <span>⚖️ {exercise.weight}</span>
-                                                                    <span>⏱️ {exercise.time}</span>
-                                                                    {phase === 'sit' && exercise.duration && (
-                                                                        <span className="text-blue-600 font-medium">🕐 {exercise.duration} min</span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            {isSelected && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleExerciseComplete(exerciseKey);
-                                                                    }}
-                                                                    className={`p-2 rounded-full ${
-                                                                        isCompleted 
-                                                                            ? 'bg-green-500 text-white' 
-                                                                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                                                    }`}
-                                                                >
-                                                                    <Check />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Workout Summary */}
-                {Object.values(workoutSelections).some(exercise => exercise) && (
-                    <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Custom Workout Summary</h3>
-                        <div className="space-y-3">
-                            {currentWorkout.phases?.map((phase) => {
-                                const selectedExercises = Object.entries(workoutSelections)
-                                    .filter(([key, exercise]) => 
-                                        key.startsWith(`${selectedWeek}-${selectedDay}-${phase}`) && exercise
-                                    )
-                                    .map(([key, exercise]) => ({ key, exercise }));
-                                
-                                if (selectedExercises.length === 0) return null;
-                                
-                                return (
-                                    <div key={phase} className="border-l-4 border-blue-500 pl-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {getPhaseIcon(phase)}
-                                            <span className="font-medium text-gray-800">
-                                                {getPhaseTitle(phase)}
-                                            </span>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {selectedExercises.map(({ key, exercise }) => {
-                                                const isCompleted = completedExercises[key];
-                                                return (
-                                                    <div key={key} className={`flex items-center gap-3 p-2 rounded ${isCompleted ? 'bg-green-50' : ''}`}>
-                                                        <span className={`text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                                                            • {exercise.name}
-                                                        </span>
-                                                        <span className="text-xs text-gray-600">
-                                                            {exercise.reps} • {exercise.weight}
-                                                        </span>
-                                                        {isCompleted && <Check />}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* Footer */}
-                <div className="mt-8 text-center text-sm text-gray-500">
-                    <p>Based on Dr. Stacy Sims' research for postmenopausal women</p>
-                    <p className="mt-1">Workout Builder • 40-minute sessions • Home equipment optimized</p>
                 </div>
             </div>
-        );
-    };
+            <div id="jumpContent" class="phase-content">
+                <div class="exercise-card" data-exercise="squat-jump" onclick="selectExercise('jump', 'squat-jump', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Squat Jump with Stick Landing</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('squat-jump')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 5 reps</span>
+                                <span>⚖️ bodyweight</span>
+                                <span>⏱️ 2 sets</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('squat-jump', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="squat-jump-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Stand with feet hip-width apart. Lower into squat position, then explosively jump up. Focus on landing softly with knees bent and holding the landing position for 2-3 seconds before the next rep.</p>
+                    </div>
+                </div>
 
-    ReactDOM.render(<WorkoutBuilder />, document.getElementById('root'));
+                <div class="exercise-card" data-exercise="broad-jump" onclick="selectExercise('jump', 'broad-jump', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Broad Jump to Stabilization</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('broad-jump')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 3 reps</span>
+                                <span>⚖️ bodyweight</span>
+                                <span>⏱️ 2 sets</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('broad-jump', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="broad-jump-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Stand at starting line. Jump forward as far as possible, landing on both feet. Hold landing position for 3 seconds with knees bent and core engaged.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strength Training Phase -->
+        <div class="phase-section">
+            <div class="phase-header" onclick="togglePhase('strength')">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">🏋️ Strength Training (25 min)</h3>
+                    <div class="flex items-center gap-2">
+                        <span id="strengthCount" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">0 selected</span>
+                        <span id="strengthChevron">▼</span>
+                    </div>
+                </div>
+            </div>
+            <div id="strengthContent" class="phase-content">
+                <div class="exercise-card" data-exercise="goblet-squat" onclick="selectExercise('strength', 'goblet-squat', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Dumbbell Goblet Squat</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('goblet-squat')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 6-8 reps</span>
+                                <span>⚖️ 25 lbs</span>
+                                <span>⏱️ 4 sets</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('goblet-squat', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="goblet-squat-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Hold dumbbell at chest level with both hands. Squat down until thighs parallel to ground, keeping chest up and weight in heels. Drive through heels to return to standing.</p>
+                    </div>
+                </div>
+
+                <div class="exercise-card" data-exercise="bulgarian-split" onclick="selectExercise('strength', 'bulgarian-split', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Bulgarian Split Squats</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('bulgarian-split')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 8 per leg</span>
+                                <span>⚖️ 10-15 lbs each hand</span>
+                                <span>⏱️ 3 sets</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('bulgarian-split', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="bulgarian-split-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Stand 2-3 feet in front of chair, place back foot on chair. Lower into lunge position, keeping front knee over ankle. Push through front heel to return to start.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIT Phase -->
+        <div class="phase-section">
+            <div class="phase-header" onclick="togglePhase('sit')">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">⚡ SIT Finisher (8 min)</h3>
+                    <div class="flex items-center gap-2">
+                        <span id="sitTime" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">0 min / 8 min target</span>
+                        <span id="sitChevron">▼</span>
+                    </div>
+                </div>
+            </div>
+            <div id="sitContent" class="phase-content">
+                <div class="exercise-card" data-exercise="dumbbell-thrusters" data-duration="3" onclick="selectExercise('sit', 'dumbbell-thrusters', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Dumbbell Thrusters</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('dumbbell-thrusters')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 30 sec work</span>
+                                <span>⚖️ 10-15 lbs each hand</span>
+                                <span>⏱️ 3 rounds, 90s rest</span>
+                                <span class="text-blue-600 font-medium">⏰ 3 min</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('dumbbell-thrusters', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="dumbbell-thrusters-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Continuous thrusters for 30 seconds. Squat with weights at shoulders, then explosively stand and press overhead. Go directly into next rep without pausing.</p>
+                    </div>
+                </div>
+
+                <div class="exercise-card" data-exercise="burpee-complex" data-duration="3" onclick="selectExercise('sit', 'burpee-complex', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Burpee Complex</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('burpee-complex')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 30 sec work</span>
+                                <span>⚖️ bodyweight</span>
+                                <span>⏱️ 3 rounds, 90s rest</span>
+                                <span class="text-blue-600 font-medium">⏰ 3 min</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('burpee-complex', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="burpee-complex-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Drop into push-up position, do push-up, jump feet to hands, then jump up with arms overhead. Land and immediately go into next burpee.</p>
+                    </div>
+                </div>
+
+                <div class="exercise-card" data-exercise="mountain-climbers" data-duration="2.5" onclick="selectExercise('sit', 'mountain-climbers', this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-medium text-gray-800">Mountain Climber Intervals</h4>
+                                <button onclick="event.stopPropagation(); toggleDefinition('mountain-climbers')" class="text-blue-500 hover:text-blue-700">ℹ️</button>
+                            </div>
+                            <div class="text-sm text-gray-600 flex gap-4">
+                                <span>🔁 20 sec work</span>
+                                <span>⚖️ bodyweight</span>
+                                <span>⏱️ 4 rounds, 70s rest</span>
+                                <span class="text-blue-600 font-medium">⏰ 2.5 min</span>
+                            </div>
+                        </div>
+                        <button class="complete-btn bg-gray-200 text-gray-600 hover:bg-gray-300 p-2 rounded-full" onclick="event.stopPropagation(); completeExercise('mountain-climbers', this)" style="display: none;">✅</button>
+                    </div>
+                    <div id="mountain-climbers-def" class="definition">
+                        <h5 class="font-medium text-blue-800 mb-2">How to perform:</h5>
+                        <p class="text-blue-700 text-sm">Start in plank position. Rapidly alternate bringing knees to chest as if running in place. Keep hips level and core engaged throughout.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Summary -->
+    <div id="workoutSummary" class="bg-white rounded-lg shadow-lg p-6 mt-6" style="display: none;">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Your Custom Workout Summary</h3>
+        <div id="summaryContent" class="space-y-3">
+            <!-- Summary will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-gray-500">
+        <p>Based on Dr. Stacy Sims' research for postmenopausal women</p>
+        <p class="mt-1">Workout Builder • 40-minute sessions • Home equipment optimized</p>
+        <p class="mt-2 text-xs">Click the info icon (ℹ️) next to any exercise name to see detailed instructions</p>
+    </div>
+</div>
+
+<script>
+    let selectedExercises = {};
+    let completedExercises = {};
+    let currentSitTime = 0;
+
+    function togglePhase(phase) {
+        const content = document.getElementById(phase + 'Content');
+        const chevron = document.getElementById(phase + 'Chevron');
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            chevron.textContent = '▼';
+        } else {
+            content.classList.add('expanded');
+            chevron.textContent = '▲';
+        }
+    }
+
+    function toggleDefinition(exerciseId) {
+        const def = document.getElementById(exerciseId + '-def');
+        def.classList.toggle('show');
+    }
+
+    function selectExercise(phase, exerciseId, element) {
+        const isSelected = element.classList.contains('selected');
+        
+        if (phase === 'sit') {
+            const duration = parseFloat(element.getAttribute('data-duration')) || 0;
+            if (!isSelected && currentSitTime + duration > 10) {
+                alert('Adding this exercise would exceed the 10-minute limit for SIT phase.');
+                return;
+            }
+            
+            if (isSelected) {
+                currentSitTime -= duration;
+            } else {
+                currentSitTime += duration;
+            }
+            updateSitTime();
+        }
+        
+        if (isSelected) {
+            element.classList.remove('selected');
+            element.querySelector('.complete-btn').style.display = 'none';
+            delete selectedExercises[exerciseId];
+        } else {
+            element.classList.add('selected');
+            element.querySelector('.complete-btn').style.display = 'block';
+            selectedExercises[exerciseId] = {
+                phase: phase,
+                element: element
+            };
+        }
+        
+        updateCounts(phase);
+        updateSummary();
+    }
+
+    function completeExercise(exerciseId, button) {
+        const isCompleted = completedExercises[exerciseId];
+        
+        if (isCompleted) {
+            button.classList.remove('bg-green-500', 'text-white');
+            button.classList.add('bg-gray-200', 'text-gray-600');
+            selectedExercises[exerciseId].element.classList.remove('completed');
+            delete completedExercises[exerciseId];
+        } else {
+            button.classList.remove('bg-gray-200', 'text-gray-600');
+            button.classList.add('bg-green-500', 'text-white');
+            selectedExercises[exerciseId].element.classList.add('completed');
+            completedExercises[exerciseId] = true;
+        }
+        
+        updateSummary();
+    }
+
+    function updateCounts(phase) {
+        const count = Object.values(selectedExercises).filter(ex => ex.phase === phase).length;
+        document.getElementById(phase + 'Count').textContent = count + ' selected';
+    }
+
+    function updateSitTime() {
+        const timeElement = document.getElementById('sitTime');
+        let className = 'bg-blue-100 text-blue-800';
+        
+        if (currentSitTime >= 7 && currentSitTime <= 9) {
+            className = 'bg-green-100 text-green-800';
+        } else if (currentSitTime > 9) {
+            className = 'bg-red-100 text-red-800';
+        }
+        
+        timeElement.className = 'px-2 py-1 rounded text-sm ' + className;
+        timeElement.textContent = currentSitTime + ' min / 8 min target';
+    }
+
+    function updateSummary() {
+        const hasSelected = Object.keys(selectedExercises).length > 0;
+        const summary = document.getElementById('workoutSummary');
+        
+        if (hasSelected) {
+            summary.style.display = 'block';
+            
+            const phases = ['jump', 'strength', 'sit'];
+            let summaryHTML = '';
+            
+            phases.forEach(phase => {
+                const phaseExercises = Object.entries(selectedExercises).filter(([id, ex]) => ex.phase === phase);
+                
+                if (phaseExercises.length > 0) {
+                    const phaseTitle = {
+                        'jump': 'Jump Training (5 min)',
+                        'strength': 'Strength Training (25 min)',
+                        'sit': 'SIT Finisher (8 min)'
+                    }[phase];
+                    
+                    summaryHTML += `
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="font-medium text-gray-800">${phaseTitle}</span>
+                                ${phase === 'sit' ? `<span class="text-sm text-blue-600 font-medium">(Total: ${currentSitTime} min)</span>` : ''}
+                            </div>
+                            <div class="space-y-1">
+                    `;
+                    
+                    phaseExercises.forEach(([id, ex]) => {
+                        const isCompleted = completedExercises[id];
+                        const exerciseName = ex.element.querySelector('h4').textContent;
+                        const reps = ex.element.querySelector('.text-sm span:first-child').textContent.replace('🔁 ', '');
+                        const weight = ex.element.querySelector('.text-sm span:nth-child(2)').textContent.replace('⚖️ ', '');
+                        
+                        summaryHTML += `
+                            <div class="flex items-center gap-3 p-2 rounded ${isCompleted ? 'bg-green-50' : ''}">
+                                <input type="checkbox" ${isCompleted ? 'checked' : ''} 
+                                       onchange="completeExercise('${id}', selectedExercises['${id}'].element.querySelector('.complete-btn'))"
+                                       class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-sm flex-1 ${isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}">${exerciseName}</span>
+                                <span class="text-xs text-gray-600">${reps} • ${weight}</span>
+                                ${isCompleted ? '<span>✅</span>' : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    summaryHTML += '</div></div>';
+                }
+            });
+            
+            document.getElementById('summaryContent').innerHTML = summaryHTML;
+        } else {
+            summary.style.display = 'none';
+        }
+    }
 </script>
 ```
 
